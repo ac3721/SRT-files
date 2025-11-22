@@ -14,8 +14,8 @@ text = []
 debug = False
 debug_words = False
 check = False
-folder_dir = "Test"
-offset = 42
+folder_dir = "Images"
+offset = 194
 
 def numbers(image, array, count, i, debug = False):
     extracted_text = pytesseract.image_to_string(image)
@@ -35,7 +35,10 @@ def numbers(image, array, count, i, debug = False):
                 formatted = digits_only[:2] + ':' + digits_only[2:4] + ',' + digits_only[4:]
                 array.append(formatted)
             elif len(digits_only) == 5:
-                formatted = digits_only[:1] + ':' + digits_only[1:3] + ',' + digits_only[3:]
+                formatted = digits_only[:1] + ':' + digits_only[1:3] + ',' + digits_only[3:] + '**'
+                array.append(formatted)
+            elif len(digits_only) > 5:
+                formatted = digits_only[:2] + ':' + digits_only[2:4] + ',' + digits_only[4:] + '**'
                 array.append(formatted)
             else:
                 array.append('*** ' + digits_only)
