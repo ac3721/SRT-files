@@ -17,34 +17,7 @@ debug_words = False
 check = True
 folder_dir = "Images"
 offset = 0
-
-def numbers(image, array, debug = False):
-    extracted_text = pytesseract.image_to_string(image)
-    line = extracted_text.split('\n')
-    if debug:
-        print(line)
-
-    pattern = r'^\d{2}:\d{2}\.\d{3}$'
-    time = line[0]
-    if len(time) > 0:
-        time = time.replace(',','')
-        if re.match(pattern, time):
-            array.append(time.replace('.',','))
-        else:
-            digits_only = re.sub(r'[^0-9]', '', time)
-            if len(digits_only) == 7:
-                formatted = digits_only[:2] + ':' + digits_only[2:4] + ',' + digits_only[4:]
-                array.append(formatted)
-            elif len(digits_only) == 5:
-                formatted = digits_only[:1] + ':' + digits_only[1:3] + ',' + digits_only[3:] + '**'
-                array.append(formatted)
-            elif len(digits_only) > 5:
-                formatted = digits_only[:2] + ':' + digits_only[2:4] + ',' + digits_only[4:] + '**'
-                array.append(formatted)
-            else:
-                array.append('*** ' + digits_only)
-    else:
-        array.append('******')
+vtt = True
 
 def timestamp(image, debug = False):
     stamp = None
@@ -64,7 +37,7 @@ def timestamp(image, debug = False):
             if len(digits_only) == 7:
                 stamp = digits_only[:2] + ':' + digits_only[2:4] + ',' + digits_only[4:]
             elif len(digits_only) == 5:
-                stamp = digits_only[:1] + ':' + digits_only[1:3] + ',' + digits_only[3:] + '**'
+                stamp = digits_only[:1] + ':' + digits_only[1:3] + ',' + digits_only[3:] + '0**'
             elif len(digits_only) > 5:
                 stamp = digits_only[:2] + ':' + digits_only[2:4] + ',' + digits_only[4:] + '**'
             else:
@@ -72,6 +45,8 @@ def timestamp(image, debug = False):
     else:
         stamp = '******'
 
+    if vtt:
+        stamp = stamp.replace(',','.')
     return stamp
 
 def crop_image_around_text_lines(image, base_image, pad_extra=10, min_gap=5):    
@@ -128,11 +103,10 @@ def single_run(image_path):
         resample=Image.LANCZOS
     )
 
-    boxes = crop_image_to_boxes(image, 50)
     boxes = crop_image_around_text_lines(image, base_image)
 
     for line_img in boxes:
-        line_img.show()
+        # line_img.show()
         width, height = line_img.size
         left_box = (0, 0, box_width, height)
         middle_box = (box_width, 0, width - box_width - 1, height)
@@ -179,8 +153,16 @@ for image_name in os.listdir(folder_dir):
     stats = single_run(image_path)
     print(image_name, stats)
 
-with open('Output/output.srt', 'w') as output_file:
+output_name = 'Output/output'
+if vtt:
+    output_name += '.vtt'
+else:
+    output_name += '.srt'
+with open(output_name, 'w') as output_file:
+    if vtt:
+        output_file.write(f"{'WEBVTT'}\n\n")
     for i in range(len(text)):
-        output_file.write(f"{i + offset + 1}\n")
+        if not vtt:
+            output_file.write(f"{i + offset + 1}\n")
         output_file.write(f"00:{start[i]} --> 00:{end[i]}\n")
         output_file.write(f"{text[i]}\n\n")
