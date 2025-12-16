@@ -86,7 +86,7 @@ def save_excel(frame, ws, row, column = 'C'):
     ws.add_image(img)
 
 folder = 'Input Video'
-video_name = "Short.mp4"
+video_name = "Subs.mp4"
 video_path = video_name #folder + '/' + video_name
 cap = cv2.VideoCapture(video_path)
 
