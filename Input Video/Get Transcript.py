@@ -24,6 +24,33 @@ def find_text(img, debug = False):
     print(cv2.countNonZero(mask))
     return cv2.countNonZero(mask), blue_text_img
 
+def find_template(image, debug= False):
+    coord = None
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Create mask for non-white pixels (tolerate near-white, e.g., >240)
+    mask = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY)[1]
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    if contours:
+        largest_contour = max(contours, key=cv2.contourArea)
+            
+        x, y, w, h = cv2.boundingRect(largest_contour)
+        x = max(0, x)
+        y = max(0, y)
+        w = min(image.shape[1] - x, w)
+        h = min(image.shape[0] - y, h )
+        coord = [y, y+h, x, x+w]
+        
+        if debug:
+            cropped = image[y:y+h, x:x+w]
+            
+            # cv2.imwrite('cropped.jpg', cropped)
+            cv2.imshow('Cropped', cropped)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+    return coord
+
 folder = 'Input Video'
 video_name = "Short.mp4"
 video_path = video_name #folder + '/' + video_name
@@ -36,6 +63,7 @@ prev_state = None
 prev = None
 text = []
 change_timestamps = []
+coord = None
 
 while True:
     ret, frame = cap.read()
@@ -45,6 +73,9 @@ while True:
     present_pixel, filtered = find_text(frame)
     if present_pixel > 5000:
         if prev_state is None:
+            coord = find_template(frame)
+            cropped = frame[coord[0]:coord[1], coord[2]:coord[3]]
+
             prev_state = filtered
             prev = present_pixel
             text.append(frame)
